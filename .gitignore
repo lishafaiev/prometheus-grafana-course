@@ -1,0 +1,20 @@
+# Секрети — НІКОЛИ не комітимо
+.env
+*.env
+secrets/
+*-secret.yml
+*-secrets.yml
+
+# Реальні конфіги з токенами (зберігай шаблони *.example.yml)
+alertmanager.real.yml
+
+# Дані Prometheus / TSDB
+data/
+*.db
+prometheus_data/
+grafana_data/
+
+# Системне
+.DS_Store
+*.log
+*.tmp
