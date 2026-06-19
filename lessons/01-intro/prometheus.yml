@@ -1,14 +1,11 @@
-# Сюди поклади свій prometheus.yml (копія того, який аналізуєш для ДЗ).
-# Нижче — типовий приклад для орієнтиру, заміни на свій:
-
 global:
-  scrape_interval: 15s
+  scrape_interval: 15s          # як часто Prometheus забирає метрики
 
 scrape_configs:
-  - job_name: "prometheus"
+  - job_name: "prometheus"      # target 1: сам Prometheus моніторить себе
     static_configs:
       - targets: ["localhost:9090"]
 
-  - job_name: "node"
+  - job_name: "node"            # target 2: Node Exporter (метрики ОС)
     static_configs:
       - targets: ["localhost:9100"]
