@@ -1,0 +1,31 @@
+# 5 запитів PromQL до ДЗ №2.
+# Джерела метрик: cAdvisor (container_*) і self-метрики Prometheus.
+# Обовʼязкові техніки: агрегація (1), агрегація за часом (2), histogram_quantile (3).
+
+# --- Запит 1. Агрегація: CPU-навантаження по контейнерах ---
+# rate() від counter у секундах CPU = зайняті ядра; sum by (name) зводить до
+# одного числа на контейнер. Фільтр name!="" відкидає кореневий cgroup id="/".
+sum by (name) (rate(container_cpu_usage_seconds_total{name!=""}[5m]))
+
+# --- Запит 2. Агрегація за часом: пік памʼяті за 30 хв ---
+# max_over_time агрегує ОДНУ серію вздовж часу (на відміну від sum by — між
+# серіями). Дає максимум working set за вікно — видно піки, а не миттєве значення.
+max_over_time(container_memory_working_set_bytes{name!=""}[30m])
+
+# --- Запит 3. histogram_quantile: p95 латентності API Prometheus ---
+# Гістограма зберігає розподіл у бакетах (buckets) _bucket{le=...}. rate(..._bucket[5m])
+# дає швидкість по кожному бакету, sum by (le) агрегує, зберігаючи le (руйнувати не можна).
+# 0.95 -> значення, нижче якого лежить 95% запитів. cAdvisor гістограм не має,
+# тому беремо self-метрику Prometheus.
+histogram_quantile(0.95, sum by (le) (rate(prometheus_http_request_duration_seconds_bucket[5m])))
+
+# --- Запит 4. topk: топ контейнерів за вхідним мережевим трафіком ---
+# rate() від counter байтів = байт/с; sum by (name) -> на контейнер;
+# topk(3, ...) лишає трійку найактивніших.
+topk(3, sum by (name) (rate(container_network_receive_bytes_total{name!=""}[5m])))
+
+# --- Запит 5. Бінарна операція: використання памʼяті у % від ліміту ---
+# working set / ліміт * 100. Фільтр > 0 відсікає контейнери без ліміту
+# (щоб не ділити на 0). Порожній результат = жоден контейнер не має ліміту памʼяті.
+100 * container_memory_working_set_bytes{name!=""}
+  / (container_spec_memory_limit_bytes{name!=""} > 0)
