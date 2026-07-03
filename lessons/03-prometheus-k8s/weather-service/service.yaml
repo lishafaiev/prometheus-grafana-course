@@ -1,0 +1,17 @@
+---
+# Service для weather-service: дає стабільну точку доступу до пода.
+# Саме на цей Service націлюється ServiceMonitor (через лейбл app + порт http).
+apiVersion: v1
+kind: Service
+metadata:
+  name: weather-service
+  labels:
+    app: weather-service
+spec:
+  selector:
+    app: weather-service
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80

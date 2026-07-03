@@ -1,0 +1,19 @@
+---
+# ServiceMonitor — CRD оператора. Описує, який Service опитувати, на якому
+# порту й шляху. Prometheus підхоплює його завдяки нашому налаштуванню
+# serviceMonitorSelectorNilUsesHelmValues: false (бере ВСІ монітори в кластері).
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: weather-service-servicemonitor
+  labels:
+    app: weather-service
+spec:
+  # Який Service моніторити: за лейблом app: weather-service.
+  selector:
+    matchLabels:
+      app: weather-service
+  endpoints:
+    - port: http        # імʼя порту Service (не номер)
+      path: /metrics
+      interval: 15s

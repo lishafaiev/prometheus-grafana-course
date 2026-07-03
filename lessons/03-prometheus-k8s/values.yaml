@@ -1,0 +1,41 @@
+---
+# values.yaml — конфігурація для чарту kube-prometheus-stack (ДЗ №3)
+#
+# Розгортання:
+#   helm install kps prometheus-community/kube-prometheus-stack \
+#     --namespace monitoring --create-namespace -f values.yaml
+
+prometheus:
+  prometheusSpec:
+    # Тривалість зберігання метрик у локальному TSDB.
+    retention: 10d
+
+    # ВАЖЛИВО: за замовчуванням Prometheus підхоплює лише ServiceMonitor/
+    # PodMonitor, створені цим Helm-релізом. Ці прапорці вмикають режим
+    # «брати ВСІ у кластері» — щоб були видні й власні монітори (напр. для
+    # weather-service), а не лише вбудовані.
+    serviceMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+
+    # Скромні ресурси під локальний kind-кластер.
+    resources:
+      requests:
+        memory: 512Mi
+        cpu: 200m
+
+# Grafana з дашбордами Kubernetes "з коробки".
+grafana:
+  enabled: true
+  adminPassword: admin   # лише для локального навчання, не для продакшну!
+
+# Alertmanager (поки без кастомних правил — просто щоб був у стеку).
+alertmanager:
+  enabled: true
+
+# Експортери (увімкнені й за замовчуванням — наведені явно для наочності):
+# node-exporter      — системні метрики кожної ноди
+# kube-state-metrics — стан k8s-обʼєктів (pod, deployment, ...)
+nodeExporter:
+  enabled: true
+kubeStateMetrics:
+  enabled: true

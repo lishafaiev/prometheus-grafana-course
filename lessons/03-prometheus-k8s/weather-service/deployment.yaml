@@ -1,0 +1,28 @@
+---
+# Демо-застосунок ASP.NET, що віддає метрики на /metrics (бібліотека
+# prometheus-net: UseHttpMetrics + MapMetrics). Образ — готовий, з Docker Hub.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: weather-service
+  labels:
+    app: weather-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: weather-service
+  template:
+    metadata:
+      labels:
+        app: weather-service
+    spec:
+      containers:
+        - name: weather-service
+          image: ozarevychgh/weather-service:latest
+          ports:
+            - name: http
+              containerPort: 80
+          env:
+            - name: ASPNETCORE_URLS
+              value: http://+:80
