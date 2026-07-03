@@ -107,6 +107,11 @@ Prometheus підхопив цей ServiceMonitor **автоматично** —
 `serviceMonitor/default/weather-service-servicemonitor/0` — **UP**
 (`http://<pod-ip>:80/metrics`).
 
+Скріни: [`weather-service-target.png`](screenshots/weather-service-target.png) —
+таргет UP; [`weather-service-metric.png`](screenshots/weather-service-metric.png) —
+метрика `http_requests_received_total` застосунку (значення відповідає числу
+зроблених запитів).
+
 ---
 
 ## Результат
@@ -128,6 +133,8 @@ Prometheus.
 - `prometheus-targets-1.png` … `prometheus-targets-4.png` — сторінка Targets
   (UP-таргети та 4 DOWN control-plane).
 - `grafana-node-exporter.png` — дашборд Grafana *Node Exporter / Nodes*.
+- `weather-service-target.png` — власний ServiceMonitor у стані UP.
+- `weather-service-metric.png` — метрика застосунку в Prometheus.
 
 ---
 
