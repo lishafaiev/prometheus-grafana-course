@@ -7,7 +7,7 @@
 | Алерт CPU > 80% протягом 2 хв | `HighNodeCpuUsage` у [`prometheusrule-hw.yaml`](prometheusrule-hw.yaml) |
 | Алерт USE (saturation з диска) | `HighDiskSaturation` (там само) |
 | Алерт RED (кількість 5xx помилок) | `HighHttp5xxRatio` (там само) |
-| Підтвердження роботи | [`screenshots/alerts-loaded-inactive.png`](screenshots/alerts-loaded-inactive.png), [`screenshots/cpu-alert-firing.png`](screenshots/cpu-alert-firing.png) |
+| Підтвердження роботи | цикл CPU-алерта: [inactive](screenshots/alerts-loaded-inactive.png) → [pending](screenshots/cpu-alert-pending.png) → [firing](screenshots/cpu-alert-firing.png) |
 
 Усі три алерти оформлені як один ресурс **`PrometheusRule`** (CRD від
 Prometheus Operator) і застосовані в кластер із заняття 3 (kind +
