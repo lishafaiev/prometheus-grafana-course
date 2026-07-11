@@ -1,0 +1,43 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: hw05-alerts
+  namespace: monitoring
+  labels:
+    release: kps
+spec:
+  groups:
+    - name: hw05-cpu
+      rules:
+        - alert: HighNodeCpuUsage
+          expr: 100 * (1 - avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[2m]))) > 80
+          for: 2m
+          labels:
+            severity: warning
+            type: use
+          annotations:
+            summary: 'Високе завантаження CPU на {{ $labels.instance }}'
+            description: 'CPU ноди {{ $labels.instance }} = {{ $value | printf "%.1f" }}% (>80%) уже 2 хв. Перевірити top-споживачів і навантаження.'
+    - name: hw05-use
+      rules:
+        - alert: HighDiskSaturation
+          expr: rate(node_disk_io_time_seconds_total[2m]) > 0.8
+          for: 2m
+          labels:
+            severity: warning
+            type: use
+          annotations:
+            summary: 'Насичення диска {{ $labels.device }} на {{ $labels.instance }}'
+            description: 'Диск {{ $labels.device }} зайнятий {{ $value | printf "%.2f" }} частки часу (>0.8) уже 2 хв. Перевірити I/O-навантаження.'
+    - name: hw05-red
+      rules:
+        - alert: HighHttp5xxRatio
+          expr: sum(rate(http_requests_received_total{job="weather-service", code=~"5.."}[5m])) / sum(rate(http_requests_received_total{job="weather-service"}[5m])) > 0.05
+          for: 2m
+          labels:
+            severity: critical
+            type: red
+          annotations:
+            summary: 'Багато 5xx-помилок у weather-service'
+            description: 'Частка 5xx = {{ $value | printf "%.2f" }} (>5%) уже 2 хв. Перевірити логи сервісу та останні деплої.'

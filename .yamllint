@@ -1,0 +1,7 @@
+---
+# yamllint для навчального репо.
+# line-length вимкнено: PromQL-вирази і довгі description у k8s-маніфестах
+# не діляться переносами без втрати читабельності.
+extends: default
+rules:
+  line-length: disable
