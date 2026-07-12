@@ -1,0 +1,25 @@
+---
+# ДЗ №6: Blackbox-перевірка сайту robot_dreams.
+# CR Probe (Prometheus Operator) — декларативно описує ціль для blackbox-проби.
+# Оператор kube-prometheus-stack сам згенерує scrape-конфіг з relabel'ами:
+# Prometheus скрейпитиме blackbox (/probe?target=...&module=http_2xx),
+# blackbox робитиме HTTP-пробу сайту й повертатиме probe_* метрики.
+apiVersion: monitoring.coreos.com/v1
+kind: Probe
+metadata:
+  name: blackbox-robotdreams
+  namespace: monitoring
+  labels:
+    # kps-Prometheus підбирає Probe за цим лейблом (spec.probeSelector: release=kps)
+    release: kps
+spec:
+  jobName: blackbox-robotdreams      # значення лейбла job у метриках
+  interval: 30s                      # як часто робити пробу
+  module: http_2xx                   # модуль blackbox: HTTP, очікуємо 2xx
+  prober:
+    # Service blackbox-експортера (helm-реліз "blackbox"), порт 9115
+    url: blackbox-prometheus-blackbox-exporter:9115
+  targets:
+    staticConfig:
+      static:
+        - https://robotdreams.cc     # сайт robot_dreams (віддає 200, HTTP/2, TLS 1.3)
