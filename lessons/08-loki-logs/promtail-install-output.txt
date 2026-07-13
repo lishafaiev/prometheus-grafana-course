@@ -1,0 +1,18 @@
+level=WARN msg="this chart is deprecated"
+NAME: promtail
+LAST DEPLOYED: Mon Jul 13 09:55:02 2026
+NAMESPACE: loki
+STATUS: deployed
+REVISION: 1
+DESCRIPTION: Install complete
+TEST SUITE: None
+NOTES:
+***********************************************************************
+ Welcome to Grafana Promtail
+ Chart version: 6.17.1
+ Promtail version: 3.5.1
+***********************************************************************
+
+Verify the application is working by running these commands:
+* kubectl --namespace loki port-forward daemonset/promtail 3101
+* curl http://127.0.0.1:3101/metrics

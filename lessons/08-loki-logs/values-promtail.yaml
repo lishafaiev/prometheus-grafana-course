@@ -1,0 +1,9 @@
+---
+# Promtail для kind (навчальне ДЗ).
+# Promtail ставиться як DaemonSet (под на кожній ноді) і читає логи всіх
+# подів з файлової системи ноди (/var/log/pods) → шле в Loki.
+# Дефолтний scrape_config чарту вже збирає логи подів k8s; тут перевизначаємо
+# лише адресу Loki (без tenant_id, бо auth_enabled: false у Loki).
+config:
+  clients:
+    - url: http://loki-gateway.loki.svc.cluster.local/loki/api/v1/push

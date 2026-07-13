@@ -1,0 +1,27 @@
+### helm list -n loki
+NAME    	NAMESPACE	REVISION	UPDATED                                 	STATUS  	CHART          	APP VERSION
+loki    	loki     	1       	2026-07-13 09:38:36.077141473 +0300 EEST	deployed	loki-6.55.0    	3.6.7      
+promtail	loki     	1       	2026-07-13 09:55:02.225184168 +0300 EEST	deployed	promtail-6.17.1	3.5.1      
+
+### kubectl get pods -n loki -o wide
+NAME                            READY   STATUS    RESTARTS   AGE    IP            NODE                      NOMINATED NODE   READINESS GATES
+loki-0                          2/2     Running   0          21m    10.244.0.19   rd-course-control-plane   <none>           <none>
+loki-gateway-5f95f95f96-nvx62   1/1     Running   0          21m    10.244.0.17   rd-course-control-plane   <none>           <none>
+promtail-5z46f                  1/1     Running   0          5m7s   10.244.0.20   rd-course-control-plane   <none>           <none>
+
+### kubectl get daemonset promtail -n loki
+NAME       DESIRED   CURRENT   READY   UP-TO-DATE   AVAILABLE   NODE SELECTOR   AGE
+promtail   1         1         1       1            1           <none>          5m8s
+
+### Loki labels (dovod, shcho logy nadhodyat)
+__stream_shard__, app, component, container, filename, instance, job, namespace, node_name, pod, service_name, stream
+
+### node_name values (logy same z nody)
+rd-course-control-plane
+
+### Pryklad log-ryadkiv weather-service {namespace="default"}
+[07:00:09 INF] Request finished HTTP/1.1 GET http://10.244.0.8:80/metrics - 200 null application/openmetrics-text; version=1.0.0; charset=utf-8 1.9804ms
+[07:00:09 INF] Executed endpoint 'Prometheus metrics'
+[07:00:09 INF] Executing endpoint 'Prometheus metrics'
+[07:00:09 INF] Request starting HTTP/1.1 GET http://10.244.0.8:80/metrics - null null
+[06:59:54 INF] Request finished HTTP/1.1 GET http://10.244.0.8:80/metrics - 200 null application/openmetrics-text; version=1.0.0; charset=utf-8 4.0402ms
