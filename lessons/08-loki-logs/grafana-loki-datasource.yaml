@@ -1,0 +1,21 @@
+---
+# Підключення Loki як data source у Grafana (kube-prometheus-stack).
+# Grafana-сайдкар автоматично підхоплює ConfigMap з міткою grafana_datasource=1
+# і додає джерело без ручного кліку в UI.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: loki-datasource
+  namespace: monitoring
+  labels:
+    grafana_datasource: "1"
+data:
+  loki-datasource.yaml: |
+    apiVersion: 1
+    datasources:
+      - name: Loki
+        type: loki
+        access: proxy
+        # gateway Loki у namespace loki; auth_enabled=false → без X-Scope-OrgID
+        url: http://loki-gateway.loki.svc.cluster.local
+        isDefault: false

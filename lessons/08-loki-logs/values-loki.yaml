@@ -1,6 +1,6 @@
 ---
 # Loki для локального kind-кластера (навчальне ДЗ).
-# Відмінності від values організаторів (AKS + Azure Blob):
+# Відмінності від прикладу з матеріалів курсу (AKS + Azure Blob):
 #   - deploymentMode: SingleBinary (усе в одному поді) замість Distributed;
 #   - сховище filesystem (PVC через local-path) замість Azure Blob;
 #   - вимкнені важкі memcached-кеші (за замовчуванням просять ~9Gi RAM);
