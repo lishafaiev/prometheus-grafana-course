@@ -1,0 +1,68 @@
+---
+title: "Моніторинг Kubernetes-кластера з мікросервісами"
+config:
+  layout: elk
+  theme: default
+---
+flowchart LR
+  %% ── Шар 1. Джерела даних ─────────────────────────────
+  subgraph SRC["1. Джерела даних"]
+    subgraph APPS["Мікросервіси (e-commerce)"]
+      FE["frontend<br/>(власний /metrics)"]
+      BE["backend API<br/>(власний /metrics)"]
+      DB[("database<br/>(без /metrics)")]
+    end
+    K8SAPI["Kubernetes API server<br/>(стан обʼєктів)"]
+    KUBELET["kubelet + cAdvisor<br/>(ресурси контейнерів)"]
+    subgraph NODES["Ноди: 1 control-plane + 2 worker"]
+      OS["ОС нод<br/>(/proc, /sys)"]
+      CLOGS["Логи контейнерів<br/>(stdout → /var/log/pods)"]
+    end
+  end
+
+  %% ── Шар 2. Системи збору ─────────────────────────────
+  subgraph COLLECT["2. Системи збору"]
+    BB["Blackbox exporter"]
+    DBEXP["postgres-exporter"]
+    KSM["kube-state-metrics"]
+    NE["node-exporter<br/>(DaemonSet)"]
+    PT["Promtail<br/>(DaemonSet)"]
+  end
+
+  %% ── Шар 3. Зберігання / обробка ──────────────────────
+  subgraph STORE["3. Зберігання / обробка"]
+    PROM["Prometheus<br/>(kube-prometheus-stack:<br/>ServiceMonitor / PrometheusRule)"]
+    LOKI["Loki"]
+  end
+
+  %% ── Шар 4. Візуалізація та алерти ────────────────────
+  subgraph VIS["4. Візуалізація та алерти"]
+    AM["Alertmanager"]
+    NOTIF["Slack / Email"]
+    GRAF["Grafana<br/>(datasources: Prometheus, Loki)"]
+  end
+
+  %% Джерела → збір (порядок = порядок вузлів у колонках)
+  FE -.->|"HTTP-проба (ініціює BB)"| BB
+  DB -->|"SQL-запити"| DBEXP
+  K8SAPI -->|"watch"| KSM
+  OS -->|"читання /proc, /sys"| NE
+  CLOGS -->|"tail файлів логів"| PT
+
+  %% Збір → зберігання (метрики: pull, ініціює Prometheus)
+  BB -->|"pull /probe"| PROM
+  DBEXP -->|"pull"| PROM
+  KSM -->|"pull"| PROM
+  NE -->|"pull"| PROM
+  FE -->|"pull"| PROM
+  BE -->|"pull"| PROM
+  KUBELET -->|"pull"| PROM
+
+  %% Логи: push, ініціює Promtail
+  PT -->|"push"| LOKI
+
+  %% Зберігання → візуалізація та алерти
+  PROM -->|"алерти (push)"| AM
+  AM -->|"нотифікації"| NOTIF
+  PROM -->|"PromQL"| GRAF
+  LOKI -->|"LogQL"| GRAF
