@@ -1,0 +1,29 @@
+# ДЗ заняття 9 — Grafana Tempo + Alloy: вивід команд
+# Кластер: kind-rd-course
+
+===== helm releases =====
+NAME 	NAMESPACE	REVISION	UPDATED                                 	STATUS  	CHART      	APP VERSION
+tempo	tempo    	1       	2026-07-24 23:49:51.801226765 +0300 EEST	deployed	tempo-2.2.3	2.10.7     
+NAME 	NAMESPACE	REVISION	UPDATED                                 	STATUS  	CHART       	APP VERSION
+alloy	alloy    	1       	2026-07-25 00:33:44.937915779 +0300 EEST	deployed	alloy-1.11.0	v1.18.0    
+
+===== Tempo (ns tempo) =====
+NAME          READY   STATUS    RESTARTS   AGE
+pod/tempo-0   1/1     Running   0          97m
+
+NAME            TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)                                                                                         AGE
+service/tempo   ClusterIP   10.96.214.100   <none>        6831/UDP,6832/UDP,3200/TCP,14268/TCP,14250/TCP,9411/TCP,55680/TCP,55681/TCP,4317/TCP,4318/TCP   97m
+
+===== Alloy (ns alloy) =====
+NAME              READY   STATUS    RESTARTS   AGE
+pod/alloy-ljf7b   2/2     Running   0          53m
+
+NAME            TYPE        CLUSTER-IP    EXTERNAL-IP   PORT(S)                       AGE
+service/alloy   ClusterIP   10.96.65.17   <none>        12345/TCP,4317/TCP,4318/TCP   53m
+
+===== Надсилання трейсу: curl -> Alloy:4318 (OTLP HTTP) =====
+{"partialSuccess":{}}
+sent trace_id=5156d22d41923fe8b5c92d4ea4428f83 to http://localhost:4318
+
+===== Читання трейсу з Tempo API: GET /api/traces/5156d22d41923fe8b5c92d4ea4428f83 =====
+{"batches":[{"resource":{"attributes":[{"key":"service.name","value":{"stringValue":"demo-service"}}]},"scopeSpans":[{"scope":{"name":"demo-tracer"},"spans":[{"traceId":"UVbSLUGSP+i1yS1OpEKPgw==","spanId":"WzHqY70Yb/4=","name":"demo-span","kind":"SPAN_KIND_SERVER","startTimeUnixNano":"1784932029398020702","endTimeUnixNano":"1784932029498020702","attributes":[{"key":"http.method","value":{"stringValue":"GET"}}],"status":{}}]}]}]}

@@ -1,0 +1,27 @@
+---
+# Grafana Tempo (single binary) для kind — ДЗ заняття 9.
+# Чарт: grafana-community/tempo (2.2.3, Tempo 2.10.7).
+# Дефолти чарта вже підходять для kind (local storage + OTLP увімкнені);
+# нижче — явні перевизначення для наочності й документування намірів.
+tempo:
+  # Скільки зберігати трейси (block_retention у compactor).
+  retention: 24h
+
+  # Сховище трейсів: локальна файлова система в поді (НЕ хмара).
+  # Для kind достатньо; у проді тут був би S3/GCS/Azure Blob.
+  storage:
+    trace:
+      backend: local
+      local:
+        path: /var/tempo/traces
+      wal:
+        path: /var/tempo/wal
+
+  # Приймачі трейсів. Нам потрібен лише OTLP: gRPC :4317, HTTP :4318.
+  receivers:
+    otlp:
+      protocols:
+        grpc:
+          endpoint: "0.0.0.0:4317"
+        http:
+          endpoint: "0.0.0.0:4318"

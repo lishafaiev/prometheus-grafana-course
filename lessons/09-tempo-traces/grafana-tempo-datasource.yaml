@@ -1,0 +1,22 @@
+---
+# Підключення Tempo як data source у Grafana (kube-prometheus-stack).
+# Grafana-сайдкар автоматично підхоплює ConfigMap з міткою grafana_datasource=1
+# і додає джерело без ручного кліку в UI.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tempo-datasource
+  namespace: monitoring
+  labels:
+    grafana_datasource: "1"
+data:
+  tempo-datasource.yaml: |
+    apiVersion: 1
+    datasources:
+      - name: Tempo
+        type: tempo
+        uid: tempo
+        access: proxy
+        # Tempo query API (порт 3200) у namespace tempo
+        url: http://tempo.tempo.svc.cluster.local:3200
+        isDefault: false

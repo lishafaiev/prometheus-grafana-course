@@ -1,0 +1,46 @@
+---
+# Grafana Alloy як OTLP-збирач трейсів → Tempo (ДЗ заняття 9).
+# Чарт: grafana/alloy (1.11.0, Alloy v1.18.0).
+# Потік: застосунок/curl → Alloy(:4317/:4318) → Tempo(:4317).
+alloy:
+  configMap:
+    create: true
+    # Inline-конфіг Alloy (river/alloy syntax).
+    content: |
+      logging {
+        level  = "info"
+        format = "logfmt"
+      }
+
+      // Приймаємо OTLP від застосунків / curl.
+      otelcol.receiver.otlp "default" {
+        grpc { endpoint = "0.0.0.0:4317" }
+        http { endpoint = "0.0.0.0:4318" }
+        output {
+          traces = [otelcol.exporter.otlp.default.input]
+        }
+      }
+
+      // Експортуємо трейси в Tempo (in-cluster, без TLS).
+      otelcol.exporter.otlp "default" {
+        client {
+          endpoint = "tempo.tempo.svc.cluster.local:4317"
+          tls {
+            insecure = true
+          }
+        }
+      }
+
+  # ПАСТКА: без цього Service Alloy не публікує 4317/4318,
+  # і достукатись до приймача ззовні пода неможливо.
+  extraPorts:
+    - name: otlp-grpc
+      port: 4317
+      targetPort: 4317
+      protocol: TCP
+      appProtocol: h2c
+    - name: otlp-http
+      port: 4318
+      targetPort: 4318
+      protocol: TCP
+      appProtocol: http
