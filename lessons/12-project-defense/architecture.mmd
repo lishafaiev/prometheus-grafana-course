@@ -8,8 +8,8 @@ flowchart LR
   %% ── Шар 1. Джерела даних ─────────────────────────────
   subgraph SRC["1. Джерела даних"]
     subgraph APPS["Мікросервіси (e-commerce)"]
-      FE["frontend<br/>(власний /metrics)"]
-      BE["backend API<br/>(власний /metrics)"]
+      FE["frontend<br/>(/metrics + OTel SDK)"]
+      BE["backend API<br/>(/metrics + OTel SDK)"]
       DB[("database<br/>(без /metrics)")]
     end
     K8SAPI["Kubernetes API server<br/>(стан обʼєктів)"]
@@ -23,6 +23,7 @@ flowchart LR
   %% ── Шар 2. Системи збору ─────────────────────────────
   subgraph COLLECT["2. Системи збору"]
     BB["Blackbox exporter"]
+    ALLOY["Alloy<br/>(OTLP-збирач)"]
     DBEXP["postgres-exporter"]
     KSM["kube-state-metrics"]
     NE["node-exporter<br/>(DaemonSet)"]
@@ -33,13 +34,14 @@ flowchart LR
   subgraph STORE["3. Зберігання / обробка"]
     PROM["Prometheus<br/>(kube-prometheus-stack:<br/>ServiceMonitor / PrometheusRule)"]
     LOKI["Loki"]
+    TEMPO["Tempo"]
   end
 
   %% ── Шар 4. Візуалізація та алерти ────────────────────
   subgraph VIS["4. Візуалізація та алерти"]
     AM["Alertmanager"]
     NOTIF["Slack / Email"]
-    GRAF["Grafana<br/>(datasources: Prometheus, Loki)"]
+    GRAF["Grafana<br/>(datasources: Prometheus,<br/>Loki, Tempo)"]
   end
 
   %% Джерела → збір (порядок = порядок вузлів у колонках)
@@ -61,8 +63,14 @@ flowchart LR
   %% Логи: push, ініціює Promtail
   PT -->|"push"| LOKI
 
+  %% Трейси: push OTLP, ініціюють застосунки (OTel SDK)
+  FE -->|"push OTLP (спани)"| ALLOY
+  BE -->|"push OTLP (спани)"| ALLOY
+  ALLOY -->|"push OTLP"| TEMPO
+
   %% Зберігання → візуалізація та алерти
   PROM -->|"алерти (push)"| AM
   AM -->|"нотифікації"| NOTIF
   PROM -->|"PromQL"| GRAF
   LOKI -->|"LogQL"| GRAF
+  TEMPO -->|"TraceQL"| GRAF

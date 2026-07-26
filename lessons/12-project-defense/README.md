@@ -9,7 +9,7 @@
 
 - джерела даних (де виникають метрики/логи/трейси);
 - системи збору (експортери, агенти, проксі);
-- системи зберігання/обробки (Prometheus, Loki, …);
+- системи зберігання/обробки (Prometheus, Loki, Tempo, …);
 - візуалізацію та алерти (Grafana, Alertmanager).
 
 Здача — діаграма у форматі PDF; на захисті — продемонструвати роботу та
@@ -26,8 +26,10 @@ e-commerce (frontend, backend API, database). Бізнес хоче відсте
 Вибір зумовлений тим, що цей варіант повністю лягає на практику курсу:
 kind + kube-prometheus-stack (заняття 3), дашборди Grafana (заняття 4),
 алерти через PrometheusRule (заняття 5), Blackbox exporter + Probe
-(заняття 6), Loki + Promtail (заняття 8). Кожен блок діаграми підкріплений
-реальним досвідом розгортання.
+(заняття 6), Loki + Promtail (заняття 8), Tempo + Alloy (заняття 9).
+Кожен блок діаграми підкріплений реальним досвідом розгортання.
+
+Діаграма покриває всі три сигнали спостережуваності: метрики, логи і трейси.
 
 ## Діаграма
 
@@ -44,8 +46,8 @@ flowchart LR
   %% ── Шар 1. Джерела даних ─────────────────────────────
   subgraph SRC["1. Джерела даних"]
     subgraph APPS["Мікросервіси (e-commerce)"]
-      FE["frontend<br/>(власний /metrics)"]
-      BE["backend API<br/>(власний /metrics)"]
+      FE["frontend<br/>(/metrics + OTel SDK)"]
+      BE["backend API<br/>(/metrics + OTel SDK)"]
       DB[("database<br/>(без /metrics)")]
     end
     K8SAPI["Kubernetes API server<br/>(стан обʼєктів)"]
@@ -59,6 +61,7 @@ flowchart LR
   %% ── Шар 2. Системи збору ─────────────────────────────
   subgraph COLLECT["2. Системи збору"]
     BB["Blackbox exporter"]
+    ALLOY["Alloy<br/>(OTLP-збирач)"]
     DBEXP["postgres-exporter"]
     KSM["kube-state-metrics"]
     NE["node-exporter<br/>(DaemonSet)"]
@@ -69,13 +72,14 @@ flowchart LR
   subgraph STORE["3. Зберігання / обробка"]
     PROM["Prometheus<br/>(kube-prometheus-stack:<br/>ServiceMonitor / PrometheusRule)"]
     LOKI["Loki"]
+    TEMPO["Tempo"]
   end
 
   %% ── Шар 4. Візуалізація та алерти ────────────────────
   subgraph VIS["4. Візуалізація та алерти"]
     AM["Alertmanager"]
     NOTIF["Slack / Email"]
-    GRAF["Grafana<br/>(datasources: Prometheus, Loki)"]
+    GRAF["Grafana<br/>(datasources: Prometheus,<br/>Loki, Tempo)"]
   end
 
   %% Джерела → збір (порядок = порядок вузлів у колонках)
@@ -97,11 +101,17 @@ flowchart LR
   %% Логи: push, ініціює Promtail
   PT -->|"push"| LOKI
 
+  %% Трейси: push OTLP, ініціюють застосунки (OTel SDK)
+  FE -->|"push OTLP (спани)"| ALLOY
+  BE -->|"push OTLP (спани)"| ALLOY
+  ALLOY -->|"push OTLP"| TEMPO
+
   %% Зберігання → візуалізація та алерти
   PROM -->|"алерти (push)"| AM
   AM -->|"нотифікації"| NOTIF
   PROM -->|"PromQL"| GRAF
   LOKI -->|"LogQL"| GRAF
+  TEMPO -->|"TraceQL"| GRAF
 ```
 
 ## Пояснення по шарах
@@ -115,14 +125,15 @@ flowchart LR
 - **kubelet + cAdvisor** — споживання ресурсів контейнерами; особливий випадок:
   джерело, яке одразу віддає метрики у форматі Prometheus, тому окремий
   збирач йому не потрібен.
-- **Мікросервіси** — frontend і backend API інструментовані (мають власний
-  `/metrics`), database не інструментована — їй потрібен експортер.
+- **Мікросервіси** — frontend і backend API інструментовані двічі: віддають
+  метрики через власний `/metrics` і надсилають трейси через OTel SDK;
+  database не інструментована — їй потрібен експортер.
 - **Логи контейнерів** — stdout/stderr подів, які kubelet складає у файли
   в `/var/log/pods` на кожній ноді.
 
 ### 2. Системи збору
 
-Перетворюють «сирі» сигнали джерел на метрики/логи для зберігання.
+Перетворюють «сирі» сигнали джерел на метрики/логи/трейси для зберігання.
 
 - **node-exporter** (DaemonSet) — читає `/proc` і `/sys` хоста в момент
   скрейпу, віддає метрики ОС.
@@ -136,6 +147,9 @@ flowchart LR
   Prometheus забирає результат через `/probe`.
 - **Promtail** (DaemonSet) — безперервно «тейлить» файли логів з ноди
   (як `tail -f`, із запамʼятовуванням позиції) і відправляє рядки в Loki.
+- **Alloy** — OTLP-збирач трейсів: приймає спани від застосунків
+  (:4317 gRPC / :4318 HTTP) і пересилає їх у Tempo. Проміжний шар дає змогу
+  батчити, фільтрувати і збагачувати телеметрію, не чіпаючи застосунки.
 
 ### 3. Зберігання / обробка
 
@@ -143,11 +157,14 @@ flowchart LR
   цілі за ServiceMonitor, зберігає метрики в TSDB, обчислює правила алертів
   (PrometheusRule).
 - **Loki** — приймає та індексує логи від Promtail.
+- **Tempo** — сховище трейсів; вміст не індексує, пошук за trace ID
+  (або через TraceQL у Grafana).
 
 ### 4. Візуалізація та алерти
 
-- **Grafana** — єдиний інтерфейс: дашборди по метриках (datasource Prometheus,
-  мова запитів PromQL) і логах (datasource Loki, LogQL).
+- **Grafana** — єдиний інтерфейс до всіх трьох сигналів: метрики (datasource
+  Prometheus, PromQL), логи (Loki, LogQL), трейси (Tempo, TraceQL);
+  з логу можна перейти на повʼязаний трейс за trace ID.
 - **Alertmanager** — отримує спрацьовані алерти від Prometheus, групує,
   дедуплікує і надсилає нотифікації у Slack / Email.
 
@@ -159,9 +176,14 @@ flowchart LR
   (scrape). Так збираються всі метрики: експортери, kubelet/cAdvisor,
   `/metrics` застосунків.
 - **push** — відправник сам штовхає дані: Promtail → Loki (логи),
+  застосунки → Alloy → Tempo (трейси, протокол OTLP),
   Prometheus → Alertmanager (алерти).
 - **локальне читання** — не мережева взаємодія: node-exporter читає
   `/proc` і `/sys`, Promtail тейлить файли логів у межах своєї ноди.
+
+Метрики йдуть pull-ом, бо це знімок стану, який Prometheus знімає за власним
+розкладом; логи і трейси — подієві, «прийти і поскрейпити» їх не можна, тому
+вони йдуть push-ем від відправника.
 
 Окремий випадок — **Blackbox exporter**: він сам ініціює HTTP-пробу до
 frontend (на діаграмі пунктир), а результат віддає Prometheus через
