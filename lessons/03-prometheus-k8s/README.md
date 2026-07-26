@@ -15,6 +15,9 @@ Kubernetes v1.36.1), **kubectl v1.36.2**, **Helm v4.2.2**, чарт
 **kube-prometheus-stack 87.2.1** (Operator v0.92.0). Реліз — `kps`,
 namespace — `monitoring`.
 
+Цей кластер і реліз `kps` — базовий стенд для всіх наступних занять курсу
+(дашборди, алерти, blackbox, Loki, Tempo розгортаються поверх нього).
+
 ---
 
 ## Спосіб розгортання
