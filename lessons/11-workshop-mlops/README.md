@@ -66,6 +66,11 @@ kind + kube-prometheus-stack (заняття 3), дашборди Grafana (за�
 
 Джерело: [architecture.mmd](architecture.mmd) · PDF: [architecture.pdf](architecture.pdf)
 
+![Архітектурна діаграма: моніторинг Kubernetes-кластера з мікросервісами](screenshots/architecture.png)
+
+<details>
+<summary>Mermaid-джерело (рендер GitHub, без ELK-розкладки)</summary>
+
 ```mermaid
 ---
 title: "Моніторинг Kubernetes-кластера з мікросервісами"
@@ -144,6 +149,8 @@ flowchart LR
   LOKI -->|"LogQL"| GRAF
   TEMPO -->|"TraceQL"| GRAF
 ```
+
+</details>
 
 ### Пояснення по шарах
 
